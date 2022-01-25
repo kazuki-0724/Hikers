@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Hikers</string>
+    <string name="tab_text_1">Hike</string>
+    <string name="tab_text_2">Record</string>
+
+</resources>
