@@ -15,9 +15,7 @@ import androidx.fragment.app.Fragment;
 
 import com.example.hikers.R;
 
-import java.text.SimpleDateFormat;
-
-public class RecordFrag extends Fragment {
+public class RecordsFragment extends Fragment {
 
     private TextView textView;
     private ListView spotListView;
@@ -32,7 +30,7 @@ public class RecordFrag extends Fragment {
             @NonNull LayoutInflater inflater,
             @Nullable ViewGroup container,
             @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.record_fragment,container,false);
+        return inflater.inflate(R.layout.fragment_records,container,false);
     }
 
 

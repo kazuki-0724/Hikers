@@ -39,7 +39,7 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
                 fragment = new MapsFragment();
                 break;
             case 1:
-                fragment = new RecordFrag();
+                fragment = new RecordsFragment();
                 break;
         }
 
