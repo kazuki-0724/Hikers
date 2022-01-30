@@ -6,15 +6,22 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.provider.Settings;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 
 import java.util.logging.Logger;
 
@@ -23,6 +30,7 @@ public class MyLocationManager extends LocationCallback {
     private Context context;
     private FusedLocationProviderClient fusedLocationProviderClient;
     private OnLocationResultListener mListener;
+
 
     public interface OnLocationResultListener {
         void onLocationResult(LocationResult locationResult);
@@ -39,6 +47,9 @@ public class MyLocationManager extends LocationCallback {
         super.onLocationResult(locationResult);
         mListener.onLocationResult(locationResult);
     }
+
+
+
 
     public void startLocationUpdates() {
         // パーミッションの確認
@@ -59,20 +70,28 @@ public class MyLocationManager extends LocationCallback {
         }
 
         LocationRequest request = new LocationRequest();
-        request.setInterval(5000000);
+        //30秒ごとに座標取得
+        request.setInterval(3000);
+        //10mの移動を検知した場合
+        //request.setSmallestDisplacement(10);
         request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
+
         fusedLocationProviderClient.requestLocationUpdates(request, this,null);
+
     }
+
 
     public void stopLocationUpdates() {
         fusedLocationProviderClient.removeLocationUpdates(this);
     }
 
+
     private Boolean isGPSEnabled() {
         android.location.LocationManager locationManager = (android.location.LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
         return locationManager.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER);
     }
+
 
     private void showLocationSettingDialog() {
         new android.app.AlertDialog.Builder(context)
