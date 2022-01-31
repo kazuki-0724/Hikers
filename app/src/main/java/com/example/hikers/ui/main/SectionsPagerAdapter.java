@@ -17,13 +17,9 @@ import com.example.hikers.R;
  */
 public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
-    @StringRes
-    private static final int[] TAB_TITLES = new int[]{R.string.tab_text_1, R.string.tab_text_2};
-    private final Context mContext;
 
     public SectionsPagerAdapter(Context context, FragmentManager fm) {
         super(fm);
-        mContext = context;
     }
 
     @Override
@@ -33,9 +29,10 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
         //return PlaceholderFragment.newInstance(position + 1);
 
         Fragment fragment = null;
+
+        //何枚目のタブか
         switch (position){
             case 0:
-                //fragment = new HikeFrag();
                 fragment = new MapsFragment();
                 break;
             case 1:
@@ -49,8 +46,6 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
     @Nullable
     @Override
     public CharSequence getPageTitle(int position) {
-        //結局返しているのはString
-        //return mContext.getResources().getString(TAB_TITLES[position]);
         return "";
     }
 

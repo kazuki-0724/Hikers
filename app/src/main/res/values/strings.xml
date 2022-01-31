@@ -2,5 +2,7 @@
     <string name="app_name">Hikers</string>
     <string name="tab_text_1">Hike</string>
     <string name="tab_text_2">Record</string>
-
+    <string name="START">START</string>
+    <string name="STOP">STOP</string>
+    <string name="GOAL">GOAL</string>
 </resources>

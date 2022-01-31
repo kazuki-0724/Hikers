@@ -6,24 +6,17 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Location;
 import android.provider.Settings;
 
-import androidx.annotation.NonNull;
+
 import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 
-import java.util.logging.Logger;
 
 public class MyLocationManager extends LocationCallback {
     private static final int LOCATION_REQUEST_CODE = 1;
@@ -96,18 +89,12 @@ public class MyLocationManager extends LocationCallback {
     private void showLocationSettingDialog() {
         new android.app.AlertDialog.Builder(context)
                 .setMessage("設定画面で位置情報サービスを有効にしてください")
-                .setPositiveButton("設定", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                        context.startActivity(intent);
-                    }
+                .setPositiveButton("設定", (dialog, which) -> {
+                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    context.startActivity(intent);
                 })
-                .setNegativeButton("キャンセル", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        //NOP
-                    }
+                .setNegativeButton("キャンセル", (dialog, which) -> {
+                    //NOP
                 })
                 .create()
                 .show();

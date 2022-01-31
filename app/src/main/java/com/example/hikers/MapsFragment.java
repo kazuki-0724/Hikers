@@ -6,10 +6,10 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
-import android.location.LocationListener;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
@@ -19,63 +19,65 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Chronometer;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.CustomCap;
-import com.google.android.gms.maps.model.Dot;
-import com.google.android.gms.maps.model.Gap;
+
 import com.google.android.gms.maps.model.JointType;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.PatternItem;
-import com.google.android.gms.maps.model.Polygon;
+
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.RoundCap;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.Executor;
+
+/**
+ * @author Kazuki0724
+ */
 
 public class MapsFragment extends Fragment
-        implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener, MyLocationManager.OnLocationResultListener {
+        implements OnMapReadyCallback,MyLocationManager.OnLocationResultListener {
 
-
+    //計測開始座標・現在座標
     private LatLng start;
+    //経路の座標のリスト
     private List<LatLng> latLngList = new ArrayList<>();
+    //Qiitaより拝借したローケーションマネージャ
     private MyLocationManager locationManager;
+    //Viewパーツ
     private GoogleMap googleMap;
     private Button button;
     private TextView distance;
-    private TextView atmosphere;
+    private TextView step;
     private Chronometer chronometer;
 
-
+    //計測中かどうかのフラグ
     private boolean startFlag = false;
+    //最初の現在地ズームのために使うフラグ
+    private boolean initFlag = true;
+    //総移動距離
     private float totalDistance = 0;
+    //総歩数
+    private float totalSteps = 0;
 
-
+    //歩幅
+    private final float ONE_STEP = (float) 0.7;
+    //定数文字列
+    private final String START = "START";
+    private final String STOP = "STOP";
+    private final String GOAL = "GOAL";
+    //polylineの幅
     private static final int POLYLINE_STROKE_WIDTH_PX = 12;
-    private static final int PATTERN_GAP_LENGTH_PX = 20;
-    private static final PatternItem DOT = new Dot();
-    private static final PatternItem GAP = new Gap(PATTERN_GAP_LENGTH_PX);
 
-    private static final List<PatternItem> PATTERN_POLYLINE_DOTTED = Arrays.asList(GAP, DOT);
 
 
     @Nullable
@@ -88,6 +90,7 @@ public class MapsFragment extends Fragment
     }
 
 
+    @SuppressLint("DefaultLocale")
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -105,50 +108,53 @@ public class MapsFragment extends Fragment
 
 
         distance = (TextView) view.findViewById(R.id.distance);
-        atmosphere = (TextView) view.findViewById(R.id.atmosphere);
+        step = (TextView) view.findViewById(R.id.step);
         chronometer = (Chronometer) view.findViewById(R.id.chronometer);
 
 
         //ボタンの挙動
         button = (Button) view.findViewById(R.id.button);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (button.getText().equals("START")) {
-                    button.setText("STOP");
-                    Log.d("debug", "計測開始");
+        button.setOnClickListener(view1 -> {
+            if (button.getText().equals(START)) {
+                button.setText(STOP);
+                Log.d("debug", "計測開始");
 
-                    //前のデータを削除
-                    googleMap.clear();
-                    latLngList.clear();
-                    distance.setText("0m");
-                    atmosphere.setText("0歩");
+                //前のデータを削除
+                googleMap.clear();
+                latLngList.clear();
+                totalDistance = 0;
+                totalSteps = 0;
+                distance.setText("0m");
+                step.setText("0歩");
 
-                    //計測中
-                    startFlag = true;
-                    locationManager.stopLocationUpdates();
-                    locationManager.startLocationUpdates();
+                //計測開始
+                startFlag = true;
+                locationManager.stopLocationUpdates();
+                locationManager.startLocationUpdates();
 
-                    chronometer.setBase(SystemClock.elapsedRealtime());
-                    chronometer.start();
+                chronometer.setBase(SystemClock.elapsedRealtime());
+                chronometer.start();
 
-                } else if (button.getText().equals("STOP")) {
-                    button.setText("START");
-                    Log.d("debug", "計測停止");
+            } else if (button.getText().equals(STOP)) {
+                button.setText(START);
+                Log.d("debug", "計測停止");
+                //データ保存
+                Log.d("debug", "データ保存");
+                saveData();
 
-                    //計測停止
-                    startFlag = false;
-                    chronometer.stop();
+                //計測停止
+                startFlag = false;
+                chronometer.stop();
 
-                    LatLng last = latLngList.get(latLngList.size()-1);
-                    googleMap.addMarker(new MarkerOptions().position(last).title("GOAL"));
-                    //textViewに反映させる
-                    distance.setText(String.format("%.0fm", totalDistance));
-                }
+                LatLng last = latLngList.get(latLngList.size()-1);
+                googleMap.addMarker(new MarkerOptions().position(last).title(GOAL));
+                //textViewに反映させる
+                distance.setText(String.format("%.0fm", totalDistance));
             }
         });
 
         distance.setText("0m");
+        step.setText("0歩");
     }
 
 
@@ -156,8 +162,6 @@ public class MapsFragment extends Fragment
     public void onResume() {
         super.onResume();
 
-        //locationManager = new MyLocationManager(getContext(), this);
-        //locationManager.startLocationUpdates();
     }
 
 
@@ -165,21 +169,6 @@ public class MapsFragment extends Fragment
     public void onPause() {
         super.onPause();
 
-        if (locationManager != null) {
-            locationManager.stopLocationUpdates();
-        }
-    }
-
-
-    @Override
-    public void onPolylineClick(@NonNull Polyline polyline) {
-        // Flip from solid stroke to dotted stroke pattern.
-        if ((polyline.getPattern() == null) || (!polyline.getPattern().contains(DOT))) {
-            polyline.setPattern(PATTERN_POLYLINE_DOTTED);
-        } else {
-            // The default pattern is a solid stroke.
-            polyline.setPattern(null);
-        }
     }
 
 
@@ -241,6 +230,20 @@ public class MapsFragment extends Fragment
     }
 
 
+    public void saveData(){
+        //当日だけは日付データがないから
+        Calendar calendar = Calendar.getInstance();
+        @SuppressLint("DefaultLocale") String today = String.format("%d/%d/%d",calendar.get(Calendar.YEAR),calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DATE));
+
+        //とりあえずrecordとして生成
+        Record record = new Record(today, (int)totalDistance, (int)totalSteps, latLngList);
+
+    }
+
+
+
+    @SuppressLint("DefaultLocale")
     @Override
     public void onLocationResult(LocationResult locationResult) {
 
@@ -255,18 +258,20 @@ public class MapsFragment extends Fragment
         LatLng latLng = new LatLng(latitude,longitude);
 
 
-        if(startFlag == false){
+        if(!startFlag){
+            //計測開始前
             Log.d("debug","現在地");
             start = latLng;
-            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(start, 18));
-            //googleMap.moveCamera(CameraUpdateFactory.newLatLng(start));
-            //googleMap.addMarker(new MarkerOptions().position(current).title("今ここ"));
 
+            if(initFlag) {
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(start, 18));
+                initFlag = false;
+            }
 
-
-        }else if(startFlag == true){
+        }else{
 
             if(latLngList.size() == 0){
+                //特に計測開始の場合
                 //開始地点に関する処理
                 Log.d("debug","開始点");
 
@@ -275,7 +280,12 @@ public class MapsFragment extends Fragment
                 googleMap.clear();
 
                 googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(start,18));
-                googleMap.addMarker(new MarkerOptions().position(start).title("START"));
+
+                //開始地点のマーカ
+                MarkerOptions mo = new MarkerOptions().position(start).title("START");
+                mo.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
+
+                googleMap.addMarker(mo);
                 latLngList.add(start);
 
             }else{
@@ -284,10 +294,14 @@ public class MapsFragment extends Fragment
                 LatLng lastLocation = latLngList.get(latLngList.size()-1);
                 //最後の移動地点と現在の地点との距離を算出
                 float[] distance = getDistance(latitude,longitude, lastLocation.latitude, lastLocation.longitude);
+
                 //移動距離の合計を加算していく
                 totalDistance += distance[0];
+                totalSteps = totalDistance/ONE_STEP;
+
+                //反映
                 this.distance.setText(String.format("%.0fm", totalDistance));
-                this.atmosphere.setText(String.format("%.0f歩", totalDistance/0.8));
+                this.step.setText(String.format("%.0f歩", totalSteps));
 
                 //移動地点を追加していく
                 latLngList.add(latLng);
