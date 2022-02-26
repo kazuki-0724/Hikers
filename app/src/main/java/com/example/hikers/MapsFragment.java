@@ -7,6 +7,7 @@ import androidx.fragment.app.Fragment;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -103,8 +104,11 @@ public class MapsFragment extends Fragment
         LocationRequest locationRequest = new LocationRequest();
         locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 
+        /**********************/
         locationManager = new MyLocationManager(getContext(), this);
         locationManager.startLocationUpdates();
+        /**********************/
+
 
 
         distance = (TextView) view.findViewById(R.id.distance);
@@ -129,6 +133,7 @@ public class MapsFragment extends Fragment
 
                 //計測開始
                 startFlag = true;
+
                 locationManager.stopLocationUpdates();
                 locationManager.startLocationUpdates();
 
@@ -155,6 +160,7 @@ public class MapsFragment extends Fragment
 
         distance.setText("0m");
         step.setText("0歩");
+
     }
 
 
@@ -237,7 +243,7 @@ public class MapsFragment extends Fragment
                 calendar.get(Calendar.DATE));
 
         //とりあえずrecordとして生成
-        Record record = new Record(today, (int)totalDistance, (int)totalSteps, latLngList);
+        Record record = new Record(today,today, (int)totalDistance, (int)totalSteps, latLngList);
 
     }
 
